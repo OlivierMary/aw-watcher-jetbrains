@@ -1,0 +1,66 @@
+plugins {
+    id 'java'
+    id 'org.jetbrains.intellij' version '0.3.12'
+}
+
+group 'fr.mary.olivier'
+version '1.0.0'
+
+sourceSets {
+    generated {
+        java.srcDir "${projectDir}/src/generated/java"
+    }
+    main {
+        java.srcDirs += sourceSets.generated.java.srcDirs
+    }
+}
+
+task generateVersion {
+    doFirst {
+        def versionFile = file("${projectDir}/src/generated/java/fr/mary/olivier/aw/watcher/jetbrains/Version.java")
+        versionFile.parentFile.mkdirs()
+        versionFile.text = """
+package fr.mary.olivier.aw.watcher.jetbrains;
+
+public class Version {
+	public static String getVersion() {
+		return "$project.version";
+	}
+}
+"""
+    }
+}
+compileJava.dependsOn generateVersion
+
+clean {
+    delete += sourceSets.generated.java.srcDirs + sourceSets.generated.resources.srcDirs
+}
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'io.swagger:swagger-annotations:1.5.15'
+    compile 'com.squareup.okhttp:okhttp:2.7.5'
+    compile 'com.squareup.okhttp:logging-interceptor:2.7.5'
+    compile 'com.google.code.gson:gson:2.8.1'
+    compile 'io.gsonfire:gson-fire:1.8.0'
+    compile 'org.threeten:threetenbp:1.3.5'
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+intellij {
+    version System.getenv().getOrDefault('IDEA_VERSION', '2018.3') as String
+}
+patchPluginXml {
+    changeNotes """
+      - 1.0.0 - Initial version"""
+}
+
+publishPlugin {
+    username intellijPublishUsername
+    password intellijPublishPassword
+}
