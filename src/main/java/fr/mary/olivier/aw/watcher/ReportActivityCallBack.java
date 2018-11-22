@@ -1,4 +1,4 @@
-package fr.mary.olivier.aw.watcher.jetbrains;
+package fr.mary.olivier.aw.watcher;
 
 import com.intellij.openapi.diagnostic.Logger;
 import io.swagger.client.ApiCallback;

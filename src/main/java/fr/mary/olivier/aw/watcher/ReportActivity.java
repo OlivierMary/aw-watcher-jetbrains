@@ -1,4 +1,4 @@
-package fr.mary.olivier.aw.watcher.jetbrains;
+package fr.mary.olivier.aw.watcher;
 
 import com.intellij.AppTopics;
 import com.intellij.notification.Notification;
@@ -18,10 +18,10 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.PlatformUtils;
 import com.intellij.util.messages.MessageBus;
 import com.intellij.util.messages.MessageBusConnection;
-import fr.mary.olivier.aw.watcher.jetbrains.listener.RADocumentListener;
-import fr.mary.olivier.aw.watcher.jetbrains.listener.RAEditorMouseListener;
-import fr.mary.olivier.aw.watcher.jetbrains.listener.RASaveListener;
-import fr.mary.olivier.aw.watcher.jetbrains.listener.RAVisibleAreaListener;
+import fr.mary.olivier.aw.watcher.listener.RADocumentListener;
+import fr.mary.olivier.aw.watcher.listener.RAEditorMouseListener;
+import fr.mary.olivier.aw.watcher.listener.RASaveListener;
+import fr.mary.olivier.aw.watcher.listener.RAVisibleAreaListener;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.DefaultApi;
 import io.swagger.client.model.Bucket;
@@ -41,14 +41,15 @@ import java.util.concurrent.ScheduledFuture;
 public class ReportActivity implements Disposable {
 
     private static final Logger LOG = Logger.getInstance(ReportActivity.class.getName());
-    private static final String BUCKET_CLIENT_NAME = "aw-watcher-jetbrains";
     private static final String TYPE = "app.editor.activity";
     private static final BigDecimal MAX_STAY_TIME = new BigDecimal(2 * 60);
     private static final ReportActivityCallBack REPORT_ACTIVITY_CALL_BACK = new ReportActivityCallBack();
-    public static final String ACTIVITY_WATCHER = "Activity Watcher";
+    private static final String AW_WATCHER = "aw-watcher-";
+    private static final String ACTIVITY_WATCHER = "Activity Watcher";
 
     private static String ide;
     private static String ideVersion;
+    private static String bucketClientNamePrefix ;
     private static MessageBusConnection connection;
     private static DefaultApi apiClient;
     private static Bucket bucket;
@@ -67,6 +68,7 @@ public class ReportActivity implements Disposable {
     private static void initIDEInfo() {
         ideVersion = ApplicationInfo.getInstance().getFullVersion();
         ide = PlatformUtils.getPlatformPrefix();
+        bucketClientNamePrefix = AW_WATCHER + ide;
     }
 
     private static void setupConnexionToApi() {
@@ -105,10 +107,10 @@ public class ReportActivity implements Disposable {
         }
 
         try {
-            bucket = apiClient.getBucketResource(BUCKET_CLIENT_NAME + "_" + hostname, null);
+            bucket = apiClient.getBucketResource(bucketClientNamePrefix + "_" + hostname, null);
         } catch (ApiException exp) {
             CreateBucket nb = new CreateBucket();
-            nb.setClient(BUCKET_CLIENT_NAME);
+            nb.setClient(bucketClientNamePrefix);
             try {
                 nb.setHostname(InetAddress.getLocalHost().getHostName());
             } catch (UnknownHostException e1) {
@@ -116,8 +118,8 @@ public class ReportActivity implements Disposable {
             }
             nb.setType(TYPE);
             try {
-                apiClient.postBucketResource(BUCKET_CLIENT_NAME + "_" + hostname, nb);
-                bucket = apiClient.getBucketResource(BUCKET_CLIENT_NAME + "_" + hostname, null);
+                apiClient.postBucketResource(bucketClientNamePrefix + "_" + hostname, nb);
+                bucket = apiClient.getBucketResource(bucketClientNamePrefix + "_" + hostname, null);
             } catch (ApiException expBis) {
                 LOG.warn("Unable to init bucket", expBis);
             }

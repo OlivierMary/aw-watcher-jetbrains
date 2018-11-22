@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'fr.mary.olivier'
-version '1.0.2'
+version '1.0.3'
 
 sourceSets {
     generated {
@@ -17,10 +17,10 @@ sourceSets {
 
 task generateVersion {
     doFirst {
-        def versionFile = file("${projectDir}/src/generated/java/fr/mary/olivier/aw/watcher/jetbrains/Version.java")
+        def versionFile = file("${projectDir}/src/generated/java/fr/mary/olivier/aw/watcher/Version.java")
         versionFile.parentFile.mkdirs()
         versionFile.text = """
-package fr.mary.olivier.aw.watcher.jetbrains;
+package fr.mary.olivier.aw.watcher;
 
 public class Version {
 	public static String getVersion() {
@@ -57,6 +57,7 @@ intellij {
 }
 patchPluginXml {
     changeNotes """
+      - 1.0.3 - Change plugin name<br>
       - 1.0.2 - Fix NPE.<br>
       - 1.0.1 - Fix build.<br>
       - 1.0.0 - Initial version"""

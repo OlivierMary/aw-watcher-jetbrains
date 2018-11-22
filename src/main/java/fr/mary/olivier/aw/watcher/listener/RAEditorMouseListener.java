@@ -1,9 +1,9 @@
-package fr.mary.olivier.aw.watcher.jetbrains.listener;
+package fr.mary.olivier.aw.watcher.listener;
 
 
 import com.intellij.openapi.editor.event.EditorMouseEvent;
 import com.intellij.openapi.editor.event.EditorMouseListener;
-import fr.mary.olivier.aw.watcher.jetbrains.ReportActivity;
+import fr.mary.olivier.aw.watcher.ReportActivity;
 import org.jetbrains.annotations.NotNull;
 
 public class RAEditorMouseListener implements EditorMouseListener {

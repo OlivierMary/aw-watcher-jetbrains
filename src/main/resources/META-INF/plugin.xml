@@ -1,8 +1,8 @@
 <idea-plugin>
-    <id>fr.mary.olivier.aw-watcher-jetbrains-ide</id>
-    <name>ActivityWatcher for JetBrains IDEs</name>
+    <id>fr.mary.olivier.aw-watcher</id>
+    <name>Activity Watcher</name>
     <vendor email="olivier@rubike.tech" url="https://github.com/OlivierMary">OlivierMARY</vendor>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
 
     <description><![CDATA[
     This extension allows the open source tracking tool ActivityWatch to keep track of the projects and coding languages you use in jetbrains IDEs.
@@ -17,13 +17,13 @@
     <application-components>
         <!-- Add your application components here -->
         <component>
-            <implementation-class>fr.mary.olivier.aw.watcher.jetbrains.ReportActivity</implementation-class>
+            <implementation-class>fr.mary.olivier.aw.watcher.ReportActivity</implementation-class>
         </component>
     </application-components>
 
     <actions>
-        <action id="aw-watcher-jetbrains-ide.Info"
-                class="fr.mary.olivier.aw.watcher.jetbrains.InfoAction"
+        <action id="fr.mary.olivier.aw-watcher.aw-watcher.Info"
+                class="fr.mary.olivier.aw.watcher.InfoAction"
                 text="Activity Watcher Informations" description="Activity Watcher Informations">
         </action>
     </actions>

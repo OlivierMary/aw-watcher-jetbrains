@@ -1,4 +1,4 @@
-package fr.mary.olivier.aw.watcher.jetbrains;
+package fr.mary.olivier.aw.watcher;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -8,7 +8,7 @@ public class InfoAction extends AnAction {
 
     @Override
     public void actionPerformed(AnActionEvent e) {
-        Messages.showMessageDialog("Activity Watcher for JetBrains IDEs\nVersion: " + Version.getVersion(),
-                "Activity Watcher for JetBrains IDEs", Messages.getInformationIcon());
+        Messages.showMessageDialog("Activity Watcher\nVersion: " + Version.getVersion(),
+                "Activity Watcher", Messages.getInformationIcon());
     }
 }
