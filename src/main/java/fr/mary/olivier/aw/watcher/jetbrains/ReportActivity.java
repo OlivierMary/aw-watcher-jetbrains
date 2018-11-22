@@ -28,6 +28,7 @@ import io.swagger.client.model.Bucket;
 import io.swagger.client.model.CreateBucket;
 import io.swagger.client.model.EditorActivityEvent;
 import io.swagger.client.model.Event;
+import org.jetbrains.annotations.SystemIndependent;
 import org.threeten.bp.OffsetDateTime;
 
 import java.math.BigDecimal;
@@ -169,10 +170,13 @@ public class ReportActivity implements Disposable {
         lastFile = file.getPath();
         lastTime = time;
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            @SystemIndependent String projectPath = project != null && project.getBasePath() != null ? project.getBasePath() : "";
             Event event = new Event(duration,
                     new EditorActivityEvent(
-                            file.getPath().replace(project != null && project.getBasePath() != null ? project.getBasePath() : "", ""),
-                            project != null ? project.getName() : null, project.getBasePath(), getLanguage(file),
+                            file.getPath().replace(projectPath, ""),
+                            project != null ? project.getName() : null,
+                            projectPath,
+                            getLanguage(file),
                             ide, ideVersion),
                     OffsetDateTime.now());
             try {

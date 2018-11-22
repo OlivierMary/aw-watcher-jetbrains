@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'fr.mary.olivier'
-version '1.0.1'
+version '1.0.2'
 
 sourceSets {
     generated {
@@ -57,7 +57,8 @@ intellij {
 }
 patchPluginXml {
     changeNotes """
-      - 1.0.1 - Fix build.
+      - 1.0.2 - Fix NPE.<br>
+      - 1.0.1 - Fix build.<br>
       - 1.0.0 - Initial version"""
 }
 
