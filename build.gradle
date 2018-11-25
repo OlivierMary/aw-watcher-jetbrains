@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'fr.mary.olivier'
-version '1.0.4'
+version '1.0.5'
 
 sourceSets {
     generated {
@@ -57,16 +57,18 @@ intellij {
 }
 patchPluginXml {
     changeNotes """
-      - 1.0.4<br>
+      1.0.5<br>
+       - TODO<br>
+      1.0.4<br>
        - All events resend if connexion to AW server lost<br>
        - No more error log if connexion failed after ide start connexion to AW server<br>
-      - 1.0.3<br>
+      1.0.3<br>
        - Change plugin name<br>
-      - 1.0.2<br>
+      1.0.2<br>
        - Fix NPE.<br>
-      - 1.0.1<br>
+      1.0.1<br>
        - Fix build.<br>
-      - 1.0.0<br>
+      1.0.0<br>
        - Initial version"""
 }
 

@@ -2,7 +2,7 @@
     <id>fr.mary.olivier.aw-watcher</id>
     <name>Activity Watcher</name>
     <vendor email="olivier@rubike.tech" url="https://github.com/OlivierMary">OlivierMARY</vendor>
-    <version>1.0.4</version>
+    <version>1.0.5</version>
 
     <description><![CDATA[
     This extension allows the open source tracking tool ActivityWatch to keep track of the projects and coding languages you use in jetbrains IDEs.
