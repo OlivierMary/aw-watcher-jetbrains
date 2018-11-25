@@ -42,7 +42,7 @@ import java.util.concurrent.ScheduledFuture;
 
 public class ReportActivity implements Disposable {
 
-    static final String ACTIVITY_WATCHER = "Activity Watcher";
+    private static final String ACTIVITY_WATCHER = "Activity Watcher";
     private static final Logger LOG = Logger.getInstance(ReportActivity.class.getName());
     private static final String TYPE = "app.editor.activity";
     private static final BigDecimal MAX_STAY_TIME = new BigDecimal(2 * 60);
@@ -211,15 +211,24 @@ public class ReportActivity implements Disposable {
     }
 
     static void connexionResume() {
-        ReportActivity.setConnexionLost(false);
+        if (ReportActivity.isConnexionLost()) {
+            ReportActivity.setConnexionLost(false);
+            Notifications.Bus.notify(new Notification(ReportActivity.ACTIVITY_WATCHER, ReportActivity.ACTIVITY_WATCHER,
+                    "Activity Watcher Server connexion resume!", NotificationType.INFORMATION));
+        }
     }
 
     static void connexionLost() {
+        if (!ReportActivity.isConnexionLost()) {
+            Notifications.Bus.notify(new Notification(ReportActivity.ACTIVITY_WATCHER, ReportActivity.ACTIVITY_WATCHER,
+                    "Activity Watcher Server connexion lost?\n " +
+                            "Will try to re-send events when connexion back.", NotificationType.WARNING));
+        }
         ReportActivity.setConnexionLost(true);
         lastFailed = getCurrentTimestamp();
     }
 
-    static synchronized boolean isConnexionLost() {
+    private static synchronized boolean isConnexionLost() {
         return connexionLost;
     }
 
