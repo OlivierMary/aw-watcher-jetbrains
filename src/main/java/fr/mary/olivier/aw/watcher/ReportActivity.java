@@ -34,22 +34,24 @@ import org.threeten.bp.OffsetDateTime;
 import java.math.BigDecimal;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 
 public class ReportActivity implements Disposable {
 
+    static final String ACTIVITY_WATCHER = "Activity Watcher";
     private static final Logger LOG = Logger.getInstance(ReportActivity.class.getName());
     private static final String TYPE = "app.editor.activity";
     private static final BigDecimal MAX_STAY_TIME = new BigDecimal(2 * 60);
-    private static final ReportActivityCallBack REPORT_ACTIVITY_CALL_BACK = new ReportActivityCallBack();
+    private static final BigDecimal MAX_RETRY_TIME = new BigDecimal(30);
     private static final String AW_WATCHER = "aw-watcher-";
-    private static final String ACTIVITY_WATCHER = "Activity Watcher";
 
     private static String ide;
     private static String ideVersion;
-    private static String bucketClientNamePrefix ;
+    private static String bucketClientNamePrefix;
     private static MessageBusConnection connection;
     private static DefaultApi apiClient;
     private static Bucket bucket;
@@ -58,11 +60,15 @@ public class ReportActivity implements Disposable {
     private static ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private static ScheduledFuture<?> scheduledFixture;
     private static boolean connexionFailedMessageAlreadySend = false;
+    private static boolean connexionLost = false;
+    private static BigDecimal lastFailed = getCurrentTimestamp();
+    private static List<Event> eventsToSend = new ArrayList<>();
 
     ReportActivity() {
         LOG.info("Initializing ActivityWatcher plugin : Start");
         initIDEInfo();
         setupConnexionToApi();
+        setupEventListeners();
     }
 
     private static void initIDEInfo() {
@@ -85,7 +91,6 @@ public class ReportActivity implements Disposable {
                     connexionFailedMessageAlreadySend = true;
                 }
             } else {
-                setupEventListeners();
                 scheduledFixture.cancel(false);
                 Notifications.Bus.notify(new Notification(ACTIVITY_WATCHER, ACTIVITY_WATCHER,
                         "Activity Watcher Server Connected.", NotificationType.INFORMATION));
@@ -139,31 +144,21 @@ public class ReportActivity implements Disposable {
         });
     }
 
-    @Override
-    public void dispose() {
-        try {
-            connection.disconnect();
-        } catch (Exception e) {
-            LOG.error("Unable to disconnect", e);
-        }
-        try {
-            scheduledFixture.cancel(true);
-        } catch (Exception e) {
-            LOG.error("Unable to cancel scheduler", e);
-        }
-    }
-
     public static void stayOnFile(Editor editor) {
         VirtualFile file = FileDocumentManager.getInstance().getFile(editor.getDocument());
         Project project = editor.getProject();
-        sendEvent(file, project, false);
+        addAndSendEvent(file, project, false);
     }
 
     private static boolean longEnougthToLog(BigDecimal now) {
         return lastTime.add(MAX_STAY_TIME).compareTo(now) < 0;
     }
 
-    public static void sendEvent(final VirtualFile file, Project project, final boolean activity) {
+    private static boolean longEnougthToRetry() {
+        return lastFailed.add(MAX_RETRY_TIME).compareTo(getCurrentTimestamp()) < 0;
+    }
+
+    public static void addAndSendEvent(final VirtualFile file, Project project, final boolean activity) {
         final BigDecimal time = getCurrentTimestamp();
         if (file == null || !activity && file.getPath().equals(lastFile) && !longEnougthToLog(time)) {
             return;
@@ -181,14 +176,27 @@ public class ReportActivity implements Disposable {
                             getLanguage(file),
                             ide, ideVersion),
                     OffsetDateTime.now());
-            try {
-                apiClient.postEventsResourceAsync(bucket.getId(), event, REPORT_ACTIVITY_CALL_BACK);
-            } catch (ApiException exp) {
-                LOG.error("Error sending Activity report event", exp);
-            }
+            getEventsToSend().add(event);
+            sendAllEvents();
         });
     }
 
+    static void eventSent(Event event) {
+        ReportActivity.getEventsToSend().remove(event);
+    }
+
+    private static synchronized void sendAllEvents() {
+        if (bucket == null || ReportActivity.isConnexionLost() && !longEnougthToRetry()) {
+            return;
+        }
+        for (Event event : getEventsToSend()) {
+            try {
+                apiClient.postEventsResourceAsync(bucket.getId(), event, new ReportActivityCallBack(event));
+            } catch (ApiException exp) {
+                // nothing
+            }
+        }
+    }
 
     public static Project getProject(Document document) {
         Editor[] editors = EditorFactory.getInstance().getEditors(document);
@@ -198,6 +206,27 @@ public class ReportActivity implements Disposable {
         return null;
     }
 
+    private static synchronized List<Event> getEventsToSend() {
+        return eventsToSend;
+    }
+
+    static void connexionResume() {
+        ReportActivity.setConnexionLost(false);
+    }
+
+    static void connexionLost() {
+        ReportActivity.setConnexionLost(true);
+        lastFailed = getCurrentTimestamp();
+    }
+
+    static synchronized boolean isConnexionLost() {
+        return connexionLost;
+    }
+
+    private static synchronized void setConnexionLost(boolean connexionLost) {
+        ReportActivity.connexionLost = connexionLost;
+    }
+
     private static String getLanguage(final VirtualFile file) {
         FileType type = file.getFileType();
         return type.getName();
@@ -205,5 +234,20 @@ public class ReportActivity implements Disposable {
 
     private static BigDecimal getCurrentTimestamp() {
         return new BigDecimal(String.valueOf(System.currentTimeMillis() / 1000.0)).setScale(4, BigDecimal.ROUND_HALF_UP);
+    }
+
+    @Override
+    public void dispose() {
+        sendAllEvents(); // Try to send lasts event if connexion failed.
+        try {
+            connection.disconnect();
+        } catch (Exception e) {
+            LOG.error("Unable to disconnect", e);
+        }
+        try {
+            scheduledFixture.cancel(true);
+        } catch (Exception e) {
+            LOG.error("Unable to cancel scheduler", e);
+        }
     }
 }

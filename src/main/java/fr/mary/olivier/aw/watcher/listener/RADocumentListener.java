@@ -19,6 +19,6 @@ public class RADocumentListener implements DocumentListener {
     public void documentChanged(@NotNull DocumentEvent documentEvent) {
         Document document = documentEvent.getDocument();
         VirtualFile file = FileDocumentManager.getInstance().getFile(document);
-        ReportActivity.sendEvent(file, ReportActivity.getProject(document), false);
+        ReportActivity.addAndSendEvent(file, ReportActivity.getProject(document), false);
     }
 }
