@@ -58,7 +58,7 @@ intellij {
 patchPluginXml {
     changeNotes """
       1.0.5<br>
-       - TODO<br>
+       - Send notification when connexion is back<br>
       1.0.4<br>
        - All events resend if connexion to AW server lost<br>
        - No more error log if connexion failed after ide start connexion to AW server<br>

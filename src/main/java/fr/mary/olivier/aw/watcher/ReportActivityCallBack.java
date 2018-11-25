@@ -36,5 +36,4 @@ public class ReportActivityCallBack implements ApiCallback<Void> {
     public void onDownloadProgress(long bytesRead, long contentLength, boolean done) {
         // no action
     }
-
 }

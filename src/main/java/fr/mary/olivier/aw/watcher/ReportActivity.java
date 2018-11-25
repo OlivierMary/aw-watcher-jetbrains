@@ -214,7 +214,7 @@ public class ReportActivity implements Disposable {
         if (ReportActivity.isConnexionLost()) {
             ReportActivity.setConnexionLost(false);
             Notifications.Bus.notify(new Notification(ReportActivity.ACTIVITY_WATCHER, ReportActivity.ACTIVITY_WATCHER,
-                    "Activity Watcher Server connexion resume!", NotificationType.INFORMATION));
+                    "Activity Watcher Server is back!", NotificationType.INFORMATION));
         }
     }
 
