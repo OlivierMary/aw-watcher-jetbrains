@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'fr.mary.olivier'
-version '1.0.6'
+version '1.0.7'
 
 sourceSets {
     generated {
@@ -53,13 +53,15 @@ dependencies {
 }
 
 intellij {
-    version 2017.3 as String
+    version 2017.3 as String // since this version.
     updateSinceUntilBuild false
 }
 patchPluginXml {
     changeNotes """
+      1.0.7<br>
+       - Fix notes + plugin.xml comments<br>
       1.0.6<br>
-       - Compatibility
+       - Compatibility<br>
       1.0.5<br>
        - Send notification when connexion is back<br>
       1.0.4<br>
