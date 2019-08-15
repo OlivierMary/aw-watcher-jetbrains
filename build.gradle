@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'fr.mary.olivier'
-version '1.0.7'
+version '1.0.8'
 
 sourceSets {
     generated {
@@ -58,6 +58,8 @@ intellij {
 }
 patchPluginXml {
     changeNotes """
+      1.0.8<br>
+       - Fix exceptions
       1.0.7<br>
        - Fix notes + plugin.xml comments<br>
       1.0.6<br>
