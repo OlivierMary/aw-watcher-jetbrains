@@ -21,13 +21,17 @@ public class EditorActivityEvent {
     @SerializedName("editorVersion")
     private String editorVersion;
 
-    public EditorActivityEvent(String file, String project, String projectPath, String language, String editor, String editorVersion) {
+    @SerializedName("eventType")
+    private String eventType;
+
+    public EditorActivityEvent(String file, String project, String projectPath, String language, String editor, String editorVersion, String eventType) {
         this.file = file;
         this.project = project;
         this.projectPath = projectPath;
         this.language = language;
         this.editor = editor;
         this.editorVersion = editorVersion;
+        this.eventType = eventType;
     }
 
     public String getFile() {
@@ -78,26 +82,25 @@ public class EditorActivityEvent {
         this.editorVersion = editorVersion;
     }
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("class EditorActivityEvent {\n");
-
-        sb.append("    file: ").append(toIndentedString(file)).append("\n");
-        sb.append("    project: ").append(toIndentedString(project)).append("\n");
-        sb.append("    projectPath: ").append(toIndentedString(projectPath)).append("\n");
-        sb.append("    language: ").append(toIndentedString(language)).append("\n");
-        sb.append("    editor: ").append(toIndentedString(editor)).append("\n");
-        sb.append("    editorVersion: ").append(toIndentedString(editorVersion)).append("\n");
-        sb.append("}");
-        return sb.toString();
+    public String getEventType() {
+        return eventType;
     }
 
-    private String toIndentedString(Object o) {
-        if (o == null) {
-            return "null";
-        }
-        return o.toString().replace("\n", "\n    ");
+    public void setEventType(String eventType) {
+        this.eventType = eventType;
+    }
+
+    @Override
+    public String toString() {
+        return "EditorActivityEvent{" +
+                "file='" + file + '\'' +
+                ", project='" + project + '\'' +
+                ", projectPath='" + projectPath + '\'' +
+                ", language='" + language + '\'' +
+                ", editor='" + editor + '\'' +
+                ", editorVersion='" + editorVersion + '\'' +
+                ", eventType='" + eventType + '\'' +
+                '}';
     }
 }
 

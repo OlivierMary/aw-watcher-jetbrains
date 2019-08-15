@@ -64,6 +64,8 @@ public class ReportActivity implements Disposable {
     private static boolean connexionLost = false;
     private static BigDecimal lastFailed = getCurrentTimestamp();
     private static List<Event> eventsToSend = new ArrayList<>();
+    private static String lastFileType;
+    private static Project lastProject;
 
     ReportActivity() {
         LOG.info("Initializing ActivityWatcher plugin : Start");
@@ -145,12 +147,6 @@ public class ReportActivity implements Disposable {
         });
     }
 
-    public static void stayOnFile(Editor editor) {
-        VirtualFile file = FileDocumentManager.getInstance().getFile(editor.getDocument());
-        Project project = editor.getProject();
-        addAndSendEvent(file, project, false);
-    }
-
     private static boolean longEnougthToLog(BigDecimal now) {
         return lastTime.add(MAX_STAY_TIME).compareTo(now) < 0;
     }
@@ -159,43 +155,59 @@ public class ReportActivity implements Disposable {
         return lastFailed.add(MAX_RETRY_TIME).compareTo(getCurrentTimestamp()) < 0;
     }
 
-    public static void addAndSendEvent(final VirtualFile file, Project project, final boolean activity) {
-        final BigDecimal time = getCurrentTimestamp();
-        if (file == null || !activity && file.getPath().equals(lastFile) && !longEnougthToLog(time)) {
-            return;
+    public static void addAndSendEvent(final VirtualFile file, Project project, Class clazz) {
+        synchronized (eventsToSend) {
+            final BigDecimal time = getCurrentTimestamp();
+            if (file == null || file.getPath().equals(lastFile) && !longEnougthToLog(time)
+                    || eventsToSend.stream().anyMatch(e -> file.getPath().endsWith(((EditorActivityEvent) e.getData()).getFile()))) {
+                return;
+            }
+            if (lastFile == null){
+                initLastFile(file, project, time);
+                return;
+            }
+
+            final BigDecimal duration = time.subtract(lastTime);
+            @SystemIndependent final String projectPath = lastProject != null && lastProject.getBasePath() != null ? lastProject.getBasePath() : "";
+            Event event = new Event()
+                .duration(duration)
+                .data(new EditorActivityEvent(
+                        lastFile.replace(projectPath,""),
+                        lastProject != null ? lastProject.getName() : null,
+                        projectPath,
+                        lastFileType,
+                        ide, ideVersion, clazz.getName()))
+                .timestamp(OffsetDateTime.now());
+            eventsToSend.add(event);
+            sendAllEvents();
+            initLastFile(file, project, time);
         }
-        final BigDecimal duration = time.subtract(lastTime);
+    }
+
+    private static void initLastFile(VirtualFile file, Project project, BigDecimal time) {
+        lastProject = project;
+        lastFileType = getLanguage(file);
         lastFile = file.getPath();
         lastTime = time;
-        ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            @SystemIndependent String projectPath = project != null && project.getBasePath() != null ? project.getBasePath() : "";
-            Event event = new Event()
-                    .duration(duration)
-                    .data(new EditorActivityEvent(
-                            file.getPath().replace(projectPath, ""),
-                            project != null ? project.getName() : null,
-                            projectPath,
-                            getLanguage(file),
-                            ide, ideVersion))
-                    .timestamp(OffsetDateTime.now());
-            getEventsToSend().add(event);
-            sendAllEvents();
-        });
     }
 
     static void eventSent(Event event) {
-        ReportActivity.getEventsToSend().remove(event);
+        synchronized (eventsToSend) {
+            eventsToSend.remove(event);
+        }
     }
 
-    private static synchronized void sendAllEvents() {
+    private static void sendAllEvents() {
         if (bucket == null || ReportActivity.isConnexionLost() && !longEnougthToRetry()) {
             return;
         }
-        for (Event event : getEventsToSend()) {
-            try {
-                apiClient.postEventsResourceAsync(bucket.getId(), event, new ReportActivityCallBack(event));
-            } catch (ApiException exp) {
-                // nothing
+        synchronized (eventsToSend) {
+            for (Event event : eventsToSend) {
+                try {
+                    apiClient.postEventsResourceAsync(bucket.getId(), event, new ReportActivityCallBack(event));
+                } catch (ApiException exp) {
+                    // nothing
+                }
             }
         }
     }
@@ -206,10 +218,6 @@ public class ReportActivity implements Disposable {
             return editors[0].getProject();
         }
         return null;
-    }
-
-    private static synchronized List<Event> getEventsToSend() {
-        return eventsToSend;
     }
 
     static void connexionResume() {

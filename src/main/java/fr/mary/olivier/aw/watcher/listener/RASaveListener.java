@@ -13,7 +13,7 @@ public class RASaveListener implements FileDocumentManagerListener {
     @Override
     public void beforeDocumentSaving(@NotNull Document document) {
         VirtualFile file = FileDocumentManager.getInstance().getFile(document);
-        ReportActivity.addAndSendEvent(file, ReportActivity.getProject(document), true);
+        ReportActivity.addAndSendEvent(file, ReportActivity.getProject(document), RASaveListener.class);
     }
 
     @Override
