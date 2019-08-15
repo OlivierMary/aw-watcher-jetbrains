@@ -73,8 +73,6 @@ dependencies {
     swaggerCodegen 'org.openapitools:openapi-generator-cli:3.3.4'
 }
 
-
-
 intellij {
     version 2017.3 as String // since this version.
     updateSinceUntilBuild false
@@ -83,6 +81,8 @@ patchPluginXml {
     changeNotes """
       1.0.8<br>
        - Fix exceptions
+       - Fix file name recorded
+       - Fix multiple events recorded
       1.0.7<br>
        - Fix notes + plugin.xml comments<br>
       1.0.6<br>
