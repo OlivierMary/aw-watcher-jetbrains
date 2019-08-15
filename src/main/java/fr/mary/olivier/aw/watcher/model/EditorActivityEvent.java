@@ -1,4 +1,4 @@
-package io.swagger.client.model;
+package fr.mary.olivier.aw.watcher.model;
 
 import com.google.gson.annotations.SerializedName;
 

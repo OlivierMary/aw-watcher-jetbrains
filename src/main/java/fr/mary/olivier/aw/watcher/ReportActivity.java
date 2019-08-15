@@ -22,16 +22,17 @@ import fr.mary.olivier.aw.watcher.listener.RADocumentListener;
 import fr.mary.olivier.aw.watcher.listener.RAEditorMouseListener;
 import fr.mary.olivier.aw.watcher.listener.RASaveListener;
 import fr.mary.olivier.aw.watcher.listener.RAVisibleAreaListener;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.DefaultApi;
-import io.swagger.client.model.Bucket;
-import io.swagger.client.model.CreateBucket;
-import io.swagger.client.model.EditorActivityEvent;
-import io.swagger.client.model.Event;
+import fr.mary.olivier.aw.watcher.model.EditorActivityEvent;
 import org.jetbrains.annotations.SystemIndependent;
+import org.openapitools.client.ApiException;
+import org.openapitools.client.api.DefaultApi;
+import org.openapitools.client.model.Bucket;
+import org.openapitools.client.model.CreateBucket;
+import org.openapitools.client.model.Event;
 import org.threeten.bp.OffsetDateTime;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -112,7 +113,7 @@ public class ReportActivity implements Disposable {
         }
 
         try {
-            bucket = apiClient.getBucketResource(bucketClientNamePrefix + "_" + hostname, null);
+            bucket = apiClient.getBucketResource(bucketClientNamePrefix + "_" + hostname);
         } catch (ApiException exp) {
             CreateBucket nb = new CreateBucket();
             nb.setClient(bucketClientNamePrefix);
@@ -124,7 +125,7 @@ public class ReportActivity implements Disposable {
             nb.setType(TYPE);
             try {
                 apiClient.postBucketResource(bucketClientNamePrefix + "_" + hostname, nb);
-                bucket = apiClient.getBucketResource(bucketClientNamePrefix + "_" + hostname, null);
+                bucket = apiClient.getBucketResource(bucketClientNamePrefix + "_" + hostname);
             } catch (ApiException expBis) {
                 LOG.warn("Unable to init bucket", expBis);
             }
@@ -168,14 +169,15 @@ public class ReportActivity implements Disposable {
         lastTime = time;
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             @SystemIndependent String projectPath = project != null && project.getBasePath() != null ? project.getBasePath() : "";
-            Event event = new Event(duration,
-                    new EditorActivityEvent(
+            Event event = new Event()
+                    .duration(duration)
+                    .data(new EditorActivityEvent(
                             file.getPath().replace(projectPath, ""),
                             project != null ? project.getName() : null,
                             projectPath,
                             getLanguage(file),
-                            ide, ideVersion),
-                    OffsetDateTime.now());
+                            ide, ideVersion))
+                    .timestamp(OffsetDateTime.now());
             getEventsToSend().add(event);
             sendAllEvents();
         });
@@ -242,7 +244,7 @@ public class ReportActivity implements Disposable {
     }
 
     private static BigDecimal getCurrentTimestamp() {
-        return new BigDecimal(String.valueOf(System.currentTimeMillis() / 1000.0)).setScale(4, BigDecimal.ROUND_HALF_UP);
+        return new BigDecimal(String.valueOf(System.currentTimeMillis() / 1000.0)).setScale(4, RoundingMode.HALF_UP);
     }
 
     @Override

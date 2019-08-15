@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'org.jetbrains.intellij' version '0.4.10'
+    id 'org.hidetake.swagger.generator' version '2.18.1'
 }
 
 group 'fr.mary.olivier'
@@ -8,7 +9,7 @@ version '1.0.8'
 
 sourceSets {
     generated {
-        java.srcDir "${projectDir}/src/generated/java"
+        java.srcDirs "${projectDir}/src/generated/java", "${projectDir}/swagger/src/main/java"
     }
     main {
         java.srcDirs += sourceSets.generated.java.srcDirs
@@ -30,10 +31,25 @@ public class Version {
 """
     }
 }
-compileJava.dependsOn generateVersion
+
+swaggerSources {
+    activityWatcher {
+        inputFile = file('src/main/resources/swagger.yaml')
+
+        code {
+            language = 'java'
+            outputDir = file('swagger')
+            wipeOutputDir = true
+            rawOptions = ["--ignore-file-override=${projectDir}/.openapi-generator-ignore"]
+
+        }
+    }
+}
+
+compileJava.dependsOn generateVersion, swaggerSources.activityWatcher.code
 
 clean {
-    delete += sourceSets.generated.java.srcDirs + sourceSets.generated.resources.srcDirs
+    delete += sourceSets.generated.java.srcDirs + sourceSets.generated.resources.srcDirs + swaggerSources.activityWatcher.code.outputDir
 }
 
 sourceCompatibility = 1.8
@@ -49,8 +65,15 @@ dependencies {
     compile 'com.google.code.gson:gson:2.8.5'
     compile 'io.gsonfire:gson-fire:1.8.0'
     compile 'org.threeten:threetenbp:1.4.0'
+    compile 'javax.annotation:javax.annotation-api:1.3.2'
+    compile 'org.openapitools:openapi-generator:4.1.0'
+    compile 'org.apache.oltu.oauth2:org.apache.oltu.oauth2.common:1.0.1'
+    compile 'org.apache.oltu.oauth2:org.apache.oltu.oauth2.client:1.0.1'
     testCompile group: 'junit', name: 'junit', version: '4.12'
+    swaggerCodegen 'org.openapitools:openapi-generator-cli:3.3.4'
 }
+
+
 
 intellij {
     version 2017.3 as String // since this version.

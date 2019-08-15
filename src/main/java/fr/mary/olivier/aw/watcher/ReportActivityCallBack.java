@@ -1,8 +1,9 @@
 package fr.mary.olivier.aw.watcher;
 
-import io.swagger.client.ApiCallback;
-import io.swagger.client.ApiException;
-import io.swagger.client.model.Event;
+
+import org.openapitools.client.ApiCallback;
+import org.openapitools.client.ApiException;
+import org.openapitools.client.model.Event;
 
 import java.util.List;
 import java.util.Map;
