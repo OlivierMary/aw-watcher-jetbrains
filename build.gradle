@@ -103,6 +103,5 @@ patchPluginXml {
 }
 
 publishPlugin {
-    username intellijPublishUsername
-    password intellijPublishPassword
+    token intellijPublishToken
 }
