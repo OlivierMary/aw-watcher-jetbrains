@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'fr.mary.olivier'
-version '2.0.0'
+version '2.0.1'
 
 
 repositories {
@@ -72,7 +72,7 @@ dependencies {
     implementation 'org.openapitools:openapi-generator:6.3.0'
     implementation 'org.projectlombok:lombok:1.18.24'
     annotationProcessor 'org.projectlombok:lombok:1.18.24'
-    testImplementation 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.13.1'
     swaggerCodegen 'org.openapitools:openapi-generator-cli:6.3.0'
 }
 
@@ -84,6 +84,8 @@ intellij {
 }
 patchPluginXml {
     setChangeNotes """
+      2.0.1<br>
+       - Fix Call to Internal API<br>
       2.0.0<br>
        - Add support for IntelliJ 2022.3<br>
        - Change to HeatBeat event<br>

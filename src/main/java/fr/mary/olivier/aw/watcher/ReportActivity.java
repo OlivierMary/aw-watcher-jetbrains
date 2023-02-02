@@ -13,7 +13,6 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.PlatformUtils;
 import com.intellij.util.messages.MessageBus;
 import com.intellij.util.messages.MessageBusConnection;
 import fr.mary.olivier.aw.watcher.listener.RADocumentListener;
@@ -42,7 +41,7 @@ public class ReportActivity implements Disposable {
     private static final String TYPE = "app.editor.activity";
     private static final String AW_WATCHER = "aw-watcher-";
 
-    private static final String IDE_NAME = PlatformUtils.getPlatformPrefix();
+    private static final String IDE_NAME = System.getProperty("idea.platform.prefix", "unknown").toLowerCase();
     private static final String IDE_VERSION = ApplicationInfo.getInstance().getFullVersion();
     public static final int HEARTBEAT_PULSETIME = 20;
     public static final int CHECK_CONNEXION_DELAY = 10;
