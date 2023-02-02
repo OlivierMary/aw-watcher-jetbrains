@@ -7,6 +7,11 @@ plugins {
 group 'fr.mary.olivier'
 version '1.0.8'
 
+
+repositories {
+    mavenCentral()
+}
+
 sourceSets {
     generated {
         java.srcDirs "${projectDir}/src/generated/java", "${projectDir}/swagger/src/main/java"
@@ -52,11 +57,9 @@ clean {
     delete += sourceSets.generated.java.srcDirs + sourceSets.generated.resources.srcDirs + swaggerSources.activityWatcher.code.outputDir
 }
 
-sourceCompatibility = 1.8
+sourceCompatibility = 17
+targetCompatibility = 17
 
-repositories {
-    mavenCentral()
-}
 
 dependencies {
     compileOnly 'io.swagger:swagger-annotations:1.6.9'
@@ -74,7 +77,7 @@ dependencies {
 }
 
 intellij {
-    version 2017.3 as String // since this version.
+    version.set("2022.3")
     setUpdateSinceUntilBuild(false)
 
 }
