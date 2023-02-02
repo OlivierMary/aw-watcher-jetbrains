@@ -1,5 +1,8 @@
 swagger: '2.0'
-basePath: localhost:5600/api
+basePath: /api
+schemes:
+  - http
+host: localhost:5600
 paths:
   /0/buckets/:
     get:

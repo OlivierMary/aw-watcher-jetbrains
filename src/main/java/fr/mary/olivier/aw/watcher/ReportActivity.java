@@ -11,8 +11,6 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
-import com.intellij.openapi.fileEditor.FileDocumentManager;
-import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.PlatformUtils;
@@ -22,116 +20,47 @@ import fr.mary.olivier.aw.watcher.listener.RADocumentListener;
 import fr.mary.olivier.aw.watcher.listener.RAEditorMouseListener;
 import fr.mary.olivier.aw.watcher.listener.RASaveListener;
 import fr.mary.olivier.aw.watcher.listener.RAVisibleAreaListener;
-import fr.mary.olivier.aw.watcher.model.EditorActivityEvent;
-import org.jetbrains.annotations.SystemIndependent;
-import org.openapitools.client.ApiException;
+import git4idea.GitUtil;
+import git4idea.repo.GitRepositoryManager;
 import org.openapitools.client.api.DefaultApi;
 import org.openapitools.client.model.Bucket;
 import org.openapitools.client.model.CreateBucket;
 import org.openapitools.client.model.Event;
-import org.threeten.bp.OffsetDateTime;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
+import java.awt.*;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.OffsetDateTime;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 public class ReportActivity implements Disposable {
 
     private static final String ACTIVITY_WATCHER = "Activity Watcher";
     private static final Logger LOG = Logger.getInstance(ReportActivity.class.getName());
     private static final String TYPE = "app.editor.activity";
-    private static final BigDecimal MAX_STAY_TIME = new BigDecimal(2 * 60);
-    private static final BigDecimal MAX_RETRY_TIME = new BigDecimal(30);
     private static final String AW_WATCHER = "aw-watcher-";
 
-    private static String ide;
-    private static String ideVersion;
-    private static String bucketClientNamePrefix;
-    private static MessageBusConnection connection;
-    private static DefaultApi apiClient;
+    private static final String IDE_NAME = PlatformUtils.getPlatformPrefix();
+    private static final String IDE_VERSION = ApplicationInfo.getInstance().getFullVersion();
+    public static final int HEARTBEAT_PULSETIME = 20;
+    public static final int CHECK_CONNEXION_DELAY = 10;
+    private static final DefaultApi API_CLIENT = new DefaultApi();
     private static Bucket bucket;
-    private static String lastFile = null;
-    private static BigDecimal lastTime = getCurrentTimestamp();
-    private static ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-    private static ScheduledFuture<?> scheduledFixture;
+    private static final ScheduledExecutorService connexionScheduler = Executors.newScheduledThreadPool(1);
+    private static ScheduledFuture<?> scheduledConnexion;
     private static boolean connexionFailedMessageAlreadySend = false;
     private static boolean connexionLost = false;
-    private static BigDecimal lastFailed = getCurrentTimestamp();
-    private static List<Event> eventsToSend = new ArrayList<>();
-    private static String lastFileType;
-    private static Project lastProject;
+    private static MessageBusConnection connection;
+    private static ReportActivity instance;
 
-    ReportActivity() {
+
+    private ReportActivity() {
         LOG.info("Initializing ActivityWatcher plugin : Start");
-        initIDEInfo();
         setupConnexionToApi();
         setupEventListeners();
-    }
-
-    private static void initIDEInfo() {
-        ideVersion = ApplicationInfo.getInstance().getFullVersion();
-        ide = PlatformUtils.getPlatformPrefix();
-        bucketClientNamePrefix = AW_WATCHER + ide;
-    }
-
-    private static void setupConnexionToApi() {
-        final Runnable handler = () -> {
-            initClient();
-
-            if (bucket == null) {
-                LOG.info("Bucket null, no activity will be send.");
-                LOG.info("Initializing ActivityWatcher plugin : FAIL");
-                if (!connexionFailedMessageAlreadySend) {
-                    Notifications.Bus.notify(new Notification(ACTIVITY_WATCHER, ACTIVITY_WATCHER,
-                            "Activity Watcher Server not found, server is started ?\n " +
-                                    "Will try to reconnect all 60s.", NotificationType.WARNING));
-                    connexionFailedMessageAlreadySend = true;
-                }
-            } else {
-                scheduledFixture.cancel(false);
-                Notifications.Bus.notify(new Notification(ACTIVITY_WATCHER, ACTIVITY_WATCHER,
-                        "Activity Watcher Server Connected.", NotificationType.INFORMATION));
-                LOG.info("Initializing ActivityWatcher plugin : OK");
-            }
-        };
-        scheduledFixture = scheduler.scheduleWithFixedDelay(handler, 0, 60, java.util.concurrent.TimeUnit.SECONDS);
-    }
-
-    private static void initClient() {
-        apiClient = new DefaultApi();
-
-        String hostname;
-        try {
-            hostname = InetAddress.getLocalHost().getHostName();
-        } catch (UnknownHostException exp) {
-            LOG.error("Unable to get hostname", exp);
-            hostname = "unknown";
-        }
-
-        try {
-            bucket = apiClient.getBucketResource(bucketClientNamePrefix + "_" + hostname);
-        } catch (ApiException exp) {
-            CreateBucket nb = new CreateBucket();
-            nb.setClient(bucketClientNamePrefix);
-            try {
-                nb.setHostname(InetAddress.getLocalHost().getHostName());
-            } catch (UnknownHostException e1) {
-                nb.setHostname("unknown");
-            }
-            nb.setType(TYPE);
-            try {
-                apiClient.postBucketResource(bucketClientNamePrefix + "_" + hostname, nb);
-                bucket = apiClient.getBucketResource(bucketClientNamePrefix + "_" + hostname);
-            } catch (ApiException expBis) {
-                LOG.warn("Unable to init bucket", expBis);
-            }
-        }
+        instance = this;
     }
 
     private static void setupEventListeners() {
@@ -141,78 +70,17 @@ public class ReportActivity implements Disposable {
             connection = bus.connect();
             connection.subscribe(AppTopics.FILE_DOCUMENT_SYNC, new RASaveListener());
             // Switch document or in document
-            EditorFactory.getInstance().getEventMulticaster().addDocumentListener(new RADocumentListener());
-            EditorFactory.getInstance().getEventMulticaster().addEditorMouseListener(new RAEditorMouseListener());
-            EditorFactory.getInstance().getEventMulticaster().addVisibleAreaListener(new RAVisibleAreaListener());
+            EditorFactory.getInstance().getEventMulticaster().addDocumentListener(new RADocumentListener(), instance);
+            EditorFactory.getInstance().getEventMulticaster().addEditorMouseListener(new RAEditorMouseListener(), instance);
+            EditorFactory.getInstance().getEventMulticaster().addVisibleAreaListener(new RAVisibleAreaListener(), instance);
         });
     }
 
-    private static boolean longEnougthToLog(BigDecimal now) {
-        return lastTime.add(MAX_STAY_TIME).compareTo(now) < 0;
+    public static void sendHeartBeat(VirtualFile file, Document document) {
+        sendHeartBeat(file, getProject(document));
     }
 
-    private static boolean longEnougthToRetry() {
-        return lastFailed.add(MAX_RETRY_TIME).compareTo(getCurrentTimestamp()) < 0;
-    }
-
-    public static void addAndSendEvent(final VirtualFile file, Project project, Class clazz) {
-        synchronized (eventsToSend) {
-            final BigDecimal time = getCurrentTimestamp();
-            if (file == null || file.getPath().equals(lastFile) && !longEnougthToLog(time)
-                    || eventsToSend.stream().anyMatch(e -> file.getPath().endsWith(((EditorActivityEvent) e.getData()).getFile()))) {
-                return;
-            }
-            if (lastFile == null){
-                initLastFile(file, project, time);
-                return;
-            }
-
-            final BigDecimal duration = time.subtract(lastTime);
-            @SystemIndependent final String projectPath = lastProject != null && lastProject.getBasePath() != null ? lastProject.getBasePath() : "";
-            Event event = new Event()
-                .duration(duration)
-                .data(new EditorActivityEvent(
-                        lastFile.replace(projectPath,""),
-                        lastProject != null ? lastProject.getName() : null,
-                        projectPath,
-                        lastFileType,
-                        ide, ideVersion, clazz.getName()))
-                .timestamp(OffsetDateTime.now());
-            eventsToSend.add(event);
-            sendAllEvents();
-            initLastFile(file, project, time);
-        }
-    }
-
-    private static void initLastFile(VirtualFile file, Project project, BigDecimal time) {
-        lastProject = project;
-        lastFileType = getLanguage(file);
-        lastFile = file.getPath();
-        lastTime = time;
-    }
-
-    static void eventSent(Event event) {
-        synchronized (eventsToSend) {
-            eventsToSend.remove(event);
-        }
-    }
-
-    private static void sendAllEvents() {
-        if (bucket == null || ReportActivity.isConnexionLost() && !longEnougthToRetry()) {
-            return;
-        }
-        synchronized (eventsToSend) {
-            for (Event event : eventsToSend) {
-                try {
-                    apiClient.postEventsResourceAsync(bucket.getId(), event, new ReportActivityCallBack(event));
-                } catch (ApiException exp) {
-                    // nothing
-                }
-            }
-        }
-    }
-
-    public static Project getProject(Document document) {
+    private static Project getProject(Document document) {
         Editor[] editors = EditorFactory.getInstance().getEditors(document);
         if (editors.length > 0) {
             return editors[0].getProject();
@@ -220,53 +88,125 @@ public class ReportActivity implements Disposable {
         return null;
     }
 
-    static void connexionResume() {
-        if (ReportActivity.isConnexionLost()) {
-            ReportActivity.setConnexionLost(false);
-            Notifications.Bus.notify(new Notification(ReportActivity.ACTIVITY_WATCHER, ReportActivity.ACTIVITY_WATCHER,
-                    "Activity Watcher Server is back!", NotificationType.INFORMATION));
+    public static void sendHeartBeat(VirtualFile file, Project project) {
+        if (bucket != null && isAppActive() && !connexionLost) {
+            if (project == null || !project.isInitialized()) {
+                return;
+            }
+            if (file == null) {
+                return;
+            }
+
+            HeartBeatData.HeartBeatDataBuilder dataBuilder = HeartBeatData.builder()
+                    .projectPath(project.getPresentableUrl())
+                    .editorVersion(IDE_VERSION)
+                    .editor(IDE_NAME)
+                    //.eventType(classz.getName()) disabled for heartbeat because data change and create multiples of event
+                    .file(file.getPresentableName())
+                    .fileFullPath(file.getPath())
+                    .project(project.getName())
+                    .language(file.getFileType().getName());
+            GitRepositoryManager repositoryManager = GitUtil.getRepositoryManager(project);
+            repositoryManager.getRepositories().stream().findFirst().ifPresent(r -> {
+                dataBuilder.branch(r.getCurrentBranchName());
+                dataBuilder.commit(r.getCurrentRevision());
+                dataBuilder.state(r.getState().name());
+                r.getInfo().getRemotes().stream().findFirst().ifPresent(gitRemote -> dataBuilder.sourceUrl(gitRemote.getFirstUrl()));
+            });
+
+            HeartBeatData data = dataBuilder.build();
+            Event event = new Event().data(data).timestamp(OffsetDateTime.now());
+
+            try {
+                API_CLIENT.postHeartbeatResource(bucket.getId(), event, "" + (HEARTBEAT_PULSETIME));
+            } catch (Exception e) {
+                LOG.error("Unable to send heartbeat", e);
+                ReportActivity.connexionLost();
+            }
         }
     }
 
-    static void connexionLost() {
-        if (!ReportActivity.isConnexionLost()) {
-            Notifications.Bus.notify(new Notification(ReportActivity.ACTIVITY_WATCHER, ReportActivity.ACTIVITY_WATCHER,
-                    "Activity Watcher Server connexion lost?\n " +
-                            "Will try to re-send events when connexion back.", NotificationType.WARNING));
+    private static void initBucket() {
+        String bucketClientNamePrefix = AW_WATCHER + IDE_NAME;
+        String hostname;
+        try {
+            hostname = InetAddress.getLocalHost().getHostName();
+        } catch (Exception exp) {
+            LOG.error("Unable to get hostname", exp);
+            hostname = "unknown";
         }
-        ReportActivity.setConnexionLost(true);
-        lastFailed = getCurrentTimestamp();
+
+        try {
+            bucket = API_CLIENT.getBucketResource(bucketClientNamePrefix + "_" + hostname);
+        } catch (Exception exp) {
+            CreateBucket nb = new CreateBucket();
+            nb.setClient(bucketClientNamePrefix);
+            try {
+                nb.setHostname(InetAddress.getLocalHost().getHostName());
+            } catch (Exception e1) {
+                nb.setHostname("unknown");
+            }
+            nb.setType(TYPE);
+            try {
+                API_CLIENT.postBucketResource(bucketClientNamePrefix + "_" + hostname, nb);
+                bucket = API_CLIENT.getBucketResource(bucketClientNamePrefix + "_" + hostname);
+            } catch (Exception expBis) {
+                LOG.warn("Unable to init bucket", expBis);
+                connexionLost = true;
+            }
+        }
     }
 
-    private static synchronized boolean isConnexionLost() {
-        return connexionLost;
+    private static void setupConnexionToApi() {
+
+        final Runnable handler = () -> {
+            if (bucket == null) {
+                initBucket();
+            }
+
+            if (bucket == null && !connexionFailedMessageAlreadySend) {
+                connexionLost();
+            }
+
+            if (bucket != null && connexionLost) {
+                connexionResume();
+            }
+        };
+        scheduledConnexion = connexionScheduler.scheduleWithFixedDelay(handler, 0, CHECK_CONNEXION_DELAY, TimeUnit.SECONDS);
     }
 
-    private static synchronized void setConnexionLost(boolean connexionLost) {
-        ReportActivity.connexionLost = connexionLost;
-    }
-
-    private static String getLanguage(final VirtualFile file) {
-        FileType type = file.getFileType();
-        return type.getName();
-    }
-
-    private static BigDecimal getCurrentTimestamp() {
-        return new BigDecimal(String.valueOf(System.currentTimeMillis() / 1000.0)).setScale(4, RoundingMode.HALF_UP);
+    private static boolean isAppActive() {
+        return KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow() != null;
     }
 
     @Override
     public void dispose() {
-        sendAllEvents(); // Try to send lasts event if connexion failed.
         try {
             connection.disconnect();
         } catch (Exception e) {
-            LOG.error("Unable to disconnect", e);
+            LOG.error("Unable to disconnect to message bus", e);
         }
         try {
-            scheduledFixture.cancel(true);
+            scheduledConnexion.cancel(true);
         } catch (Exception e) {
-            LOG.error("Unable to cancel scheduler", e);
+            LOG.error("Unable to cancel schedulers", e);
         }
+    }
+
+    private static synchronized void connexionResume() {
+        if (connexionLost) {
+            connexionLost = false;
+            connexionFailedMessageAlreadySend = false;
+            Notifications.Bus.notify(new Notification(ReportActivity.ACTIVITY_WATCHER, ReportActivity.ACTIVITY_WATCHER, "Activity Watcher Server is back!", NotificationType.INFORMATION));
+        }
+    }
+
+    protected static synchronized void connexionLost() {
+        if (!connexionFailedMessageAlreadySend) {
+            connexionFailedMessageAlreadySend = true;
+            Notifications.Bus.notify(new Notification(ReportActivity.ACTIVITY_WATCHER, ReportActivity.ACTIVITY_WATCHER, "Activity Watcher Server connexion lost?\nWill try to re-send events when connexion back.", NotificationType.WARNING));
+        }
+        connexionLost = true;
+        bucket = null;
     }
 }

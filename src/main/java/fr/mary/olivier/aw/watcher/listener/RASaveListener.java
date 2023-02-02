@@ -1,6 +1,5 @@
 package fr.mary.olivier.aw.watcher.listener;
 
-
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileDocumentManagerListener;
@@ -13,7 +12,7 @@ public class RASaveListener implements FileDocumentManagerListener {
     @Override
     public void beforeDocumentSaving(@NotNull Document document) {
         VirtualFile file = FileDocumentManager.getInstance().getFile(document);
-        ReportActivity.addAndSendEvent(file, ReportActivity.getProject(document), RASaveListener.class);
+        ReportActivity.sendHeartBeat(file, document);
     }
 
     @Override

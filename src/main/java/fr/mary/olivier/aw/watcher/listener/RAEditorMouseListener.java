@@ -1,6 +1,5 @@
 package fr.mary.olivier.aw.watcher.listener;
 
-
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.event.EditorMouseEvent;
 import com.intellij.openapi.editor.event.EditorMouseListener;
@@ -16,7 +15,7 @@ public class RAEditorMouseListener implements EditorMouseListener {
         Editor editor = editorMouseEvent.getEditor();
         VirtualFile file = FileDocumentManager.getInstance().getFile(editor.getDocument());
         Project project = editor.getProject();
-        ReportActivity.addAndSendEvent(file, project, RAEditorMouseListener.class);
+        ReportActivity.sendHeartBeat(file, project);
     }
 
     @Override

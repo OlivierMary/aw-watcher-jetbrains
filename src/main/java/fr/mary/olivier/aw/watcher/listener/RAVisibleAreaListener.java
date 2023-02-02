@@ -1,6 +1,5 @@
 package fr.mary.olivier.aw.watcher.listener;
 
-
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.event.VisibleAreaEvent;
 import com.intellij.openapi.editor.event.VisibleAreaListener;
@@ -16,6 +15,6 @@ public class RAVisibleAreaListener implements VisibleAreaListener {
         Editor editor = visibleAreaEvent.getEditor();
         VirtualFile file = FileDocumentManager.getInstance().getFile(editor.getDocument());
         Project project = editor.getProject();
-        ReportActivity.addAndSendEvent(file, project, RAVisibleAreaListener.class);
+        ReportActivity.sendHeartBeat(file, project);
     }
 }
