@@ -42,4 +42,4 @@ jobs:
       with:
         arguments: publishPlugin
       env:
-        INTELLIJ_PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+        ORG_GRADLE_PROJECT_intellijPublishToken: ${{ secrets.PUBLISH_TOKEN }}
