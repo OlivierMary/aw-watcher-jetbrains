@@ -77,7 +77,7 @@ dependencies {
 }
 
 intellij {
-    version.set('2020.1')
+    version.set('2020.3')
     setUpdateSinceUntilBuild(false)
     plugins.add('Git4Idea')
 
@@ -116,5 +116,6 @@ patchPluginXml {
 }
 
 publishPlugin {
+    intellijPublishToken = System.getenv('INTELLIJ_PUBLISH_TOKEN') ?: ''
     setToken intellijPublishToken
 }

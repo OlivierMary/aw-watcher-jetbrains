@@ -9,9 +9,13 @@ name: Java CI with Gradle
 
 on:
   push:
-    branches: [ "master" ]
+    branches:
+      - "*"
+    tags:
+      - '*'
   pull_request:
-    branches: [ "master" ]
+    branches:
+      - "*"
 
 permissions:
   contents: read
@@ -31,4 +35,11 @@ jobs:
     - name: Build with Gradle
       uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
       with:
-        arguments: build
+        arguments: buildPlugin
+    - name: Publish with Gradle
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
+      with:
+        arguments: publishPlugin
+      env:
+        INTELLIJ_PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
