@@ -46,3 +46,10 @@ jobs:
         arguments: publishPlugin
       env:
         ORG_GRADLE_PROJECT_intellijPublishToken: ${{ secrets.PUBLISH_TOKEN }}
+    - name: Archive production artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: distribution
+        path: |
+          build/distributions/*.zip
+
