@@ -41,7 +41,7 @@ public class ReportActivity implements Disposable {
     private static final String TYPE = "app.editor.activity";
     private static final String AW_WATCHER = "aw-watcher-";
 
-    private static final String IDE_NAME = System.getProperty("idea.platform.prefix", "unknown").toLowerCase();
+    private static final String IDE_NAME = ApplicationInfo.getInstance().getVersionName().toLowerCase().replaceAll("\\s", "-");
     private static final String IDE_VERSION = ApplicationInfo.getInstance().getFullVersion();
     public static final int HEARTBEAT_PULSETIME = 20;
     public static final int CHECK_CONNEXION_DELAY = 10;
