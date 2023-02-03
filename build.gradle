@@ -57,8 +57,8 @@ clean {
     delete += sourceSets.generated.java.srcDirs + sourceSets.generated.resources.srcDirs + swaggerSources.activityWatcher.code.outputDir
 }
 
-sourceCompatibility = JavaVersion.VERSION_17
-targetCompatibility = JavaVersion.VERSION_17
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
 
 
 dependencies {
@@ -77,13 +77,15 @@ dependencies {
 }
 
 intellij {
-    version.set('2022.3')
+    version.set('2020.1')
     setUpdateSinceUntilBuild(false)
     plugins.add('Git4Idea')
 
 }
 patchPluginXml {
     setChangeNotes """
+      2.0.2<br>
+       - Add more compatibility<br>
       2.0.1<br>
        - Fix Call to Internal API<br>
       2.0.0<br>
