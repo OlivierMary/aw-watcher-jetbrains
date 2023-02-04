@@ -21,6 +21,8 @@ import fr.mary.olivier.aw.watcher.listener.RASaveListener;
 import fr.mary.olivier.aw.watcher.listener.RAVisibleAreaListener;
 import git4idea.GitUtil;
 import git4idea.repo.GitRepositoryManager;
+import org.openapitools.client.ApiCallback;
+import org.openapitools.client.ApiException;
 import org.openapitools.client.api.DefaultApi;
 import org.openapitools.client.model.Bucket;
 import org.openapitools.client.model.CreateBucket;
@@ -29,6 +31,8 @@ import org.openapitools.client.model.Event;
 import java.awt.*;
 import java.net.InetAddress;
 import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -46,6 +50,8 @@ public class ReportActivity implements Disposable {
     public static final int HEARTBEAT_PULSETIME = 20;
     public static final int CHECK_CONNEXION_DELAY = 10;
     private static final DefaultApi API_CLIENT = new DefaultApi();
+    public static final int CONNECTION_TIMEOUT = 200000;
+    public static final int READ_WRITE_TIMEOUT = 100000;
     private static Bucket bucket;
     private static final ScheduledExecutorService connexionScheduler = Executors.newScheduledThreadPool(1);
     private static ScheduledFuture<?> scheduledConnexion;
@@ -117,7 +123,28 @@ public class ReportActivity implements Disposable {
             Event event = new Event().data(data).timestamp(OffsetDateTime.now());
 
             try {
-                API_CLIENT.postHeartbeatResource(bucket.getId(), event, "" + (HEARTBEAT_PULSETIME));
+                API_CLIENT.postHeartbeatResourceAsync(bucket.getId(), event, "" + HEARTBEAT_PULSETIME, new ApiCallback<>() {
+                    @Override
+                    public void onFailure(ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
+                        LOG.error("Unable to send heartbeat", e);
+                        ReportActivity.connexionLost();
+                    }
+
+                    @Override
+                    public void onSuccess(Void result, int statusCode, Map<String, List<String>> responseHeaders) {
+
+                    }
+
+                    @Override
+                    public void onUploadProgress(long bytesWritten, long contentLength, boolean done) {
+
+                    }
+
+                    @Override
+                    public void onDownloadProgress(long bytesRead, long contentLength, boolean done) {
+
+                    }
+                });
             } catch (Exception e) {
                 LOG.error("Unable to send heartbeat", e);
                 ReportActivity.connexionLost();
@@ -136,28 +163,97 @@ public class ReportActivity implements Disposable {
         }
 
         try {
-            bucket = API_CLIENT.getBucketResource(bucketClientNamePrefix + "_" + hostname);
+            String finalHostname = hostname;
+            API_CLIENT.getBucketResourceAsync(bucketClientNamePrefix + "_" + hostname, new ApiCallback<>() {
+
+                @Override
+                public void onSuccess(Bucket result, int statusCode, Map<String, List<String>> responseHeaders) {
+                    LOG.info("Bucket found");
+                    bucket = result;
+                }
+
+                @Override
+                public void onFailure(ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
+                    LOG.info("Bucket not found, create it");
+                    CreateBucket nb = new CreateBucket();
+                    nb.setClient(bucketClientNamePrefix);
+                    nb.setHostname(finalHostname);
+                    nb.setType(TYPE);
+                    try {
+                        API_CLIENT.postBucketResourceAsync(bucketClientNamePrefix + "_" + finalHostname, nb, new ApiCallback<>() {
+
+                                    @Override
+                                    public void onSuccess(Void result, int statusCode, Map<String, List<String>> responseHeaders) {
+                                        LOG.info("Bucket created");
+                                        try {
+                                            API_CLIENT.getBucketResourceAsync(bucketClientNamePrefix + "_" + finalHostname, new ApiCallback<>() {
+                                                @Override
+                                                public void onSuccess(Bucket result, int statusCode, Map<String, List<String>> responseHeaders) {
+                                                    LOG.info("Bucket found");
+                                                    bucket = result;
+                                                }
+
+                                                @Override
+                                                public void onFailure(ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
+                                                    LOG.error("Unable to init bucket", e);
+                                                    connexionLost = true;
+                                                }
+
+
+                                                @Override
+                                                public void onUploadProgress(long bytesWritten, long contentLength, boolean done) {
+                                                }
+
+                                                @Override
+                                                public void onDownloadProgress(long bytesRead, long contentLength, boolean done) {
+                                                }
+                                            });
+                                        } catch (ApiException ex) {
+                                            LOG.error("Unable to init bucket", ex);
+                                        }
+                                    }
+
+                                    @Override
+                                    public void onFailure(ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
+                                        LOG.error("Unable to create bucket", e);
+                                    }
+
+                                    @Override
+                                    public void onUploadProgress(long bytesWritten, long contentLength, boolean done) {
+
+                                    }
+
+                                    @Override
+                                    public void onDownloadProgress(long bytesRead, long contentLength, boolean done) {
+
+                                    }
+                                }
+
+                        );
+                    } catch (Exception expB) {
+                        LOG.error("Unable to create bucket", expB);
+                    }
+                }
+
+
+                @Override
+                public void onUploadProgress(long bytesWritten, long contentLength, boolean done) {
+                }
+
+                @Override
+                public void onDownloadProgress(long bytesRead, long contentLength, boolean done) {
+                }
+            });
         } catch (Exception exp) {
-            CreateBucket nb = new CreateBucket();
-            nb.setClient(bucketClientNamePrefix);
-            try {
-                nb.setHostname(InetAddress.getLocalHost().getHostName());
-            } catch (Exception e1) {
-                nb.setHostname("unknown");
-            }
-            nb.setType(TYPE);
-            try {
-                API_CLIENT.postBucketResource(bucketClientNamePrefix + "_" + hostname, nb);
-                bucket = API_CLIENT.getBucketResource(bucketClientNamePrefix + "_" + hostname);
-            } catch (Exception expBis) {
-                LOG.warn("Unable to init bucket", expBis);
-                connexionLost = true;
-            }
+            LOG.error("Unable to init bucket", exp);
+            connexionLost = true;
         }
     }
 
     private static void setupConnexionToApi() {
-
+        API_CLIENT.getApiClient().setConnectTimeout(CONNECTION_TIMEOUT);
+        API_CLIENT.getApiClient().setReadTimeout(READ_WRITE_TIMEOUT);
+        API_CLIENT.getApiClient().setWriteTimeout(READ_WRITE_TIMEOUT);
         final Runnable handler = () -> {
             if (bucket == null) {
                 initBucket();

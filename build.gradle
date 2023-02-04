@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'fr.mary.olivier'
-version '2.0.3'
+version '2.0.4'
 
 repositories {
     mavenCentral()
@@ -83,6 +83,10 @@ intellij {
 }
 patchPluginXml {
     setChangeNotes """
+      2.0.4<br>
+       - Fix aw-server-rust schema differences<br>
+       - Fix very slow aw-server issues (windows)<br>
+       - Use async http client<br>
       2.0.3<br>
        - Fix unknown editor name in final version<br>
       2.0.2<br>

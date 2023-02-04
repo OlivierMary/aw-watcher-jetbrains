@@ -340,6 +340,13 @@ definitions:
       data:
         description: ''
         type: object
+      metadata:
+        description: ''
+        type: object
+      last_updated:
+        description: The last updated datetime of the bucket
+        type: string
+        format: date-time
       events:
         type: array
         items:
