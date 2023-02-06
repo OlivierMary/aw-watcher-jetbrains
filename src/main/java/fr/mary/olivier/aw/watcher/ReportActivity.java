@@ -57,6 +57,7 @@ public class ReportActivity implements Disposable {
     private static ScheduledFuture<?> scheduledConnexion;
     private static boolean connexionFailedMessageAlreadySend = false;
     private static boolean connexionLost = false;
+    private static boolean initialCheckDone = false;
     private static MessageBusConnection connection;
     private static ReportActivity instance;
 
@@ -102,15 +103,9 @@ public class ReportActivity implements Disposable {
                 return;
             }
 
-            HeartBeatData.HeartBeatDataBuilder dataBuilder = HeartBeatData.builder()
-                    .projectPath(project.getPresentableUrl())
-                    .editorVersion(IDE_VERSION)
-                    .editor(IDE_NAME)
+            HeartBeatData.HeartBeatDataBuilder dataBuilder = HeartBeatData.builder().projectPath(project.getPresentableUrl()).editorVersion(IDE_VERSION).editor(IDE_NAME)
                     //.eventType(classz.getName()) disabled for heartbeat because data change and create multiples of event
-                    .file(file.getPresentableName())
-                    .fileFullPath(file.getPath())
-                    .project(project.getName())
-                    .language(file.getFileType().getName());
+                    .file(file.getPresentableName()).fileFullPath(file.getPath()).project(project.getName()).language(file.getFileType().getName());
             GitRepositoryManager repositoryManager = GitUtil.getRepositoryManager(project);
             repositoryManager.getRepositories().stream().findFirst().ifPresent(r -> {
                 dataBuilder.branch(r.getCurrentBranchName());
@@ -132,17 +127,17 @@ public class ReportActivity implements Disposable {
 
                     @Override
                     public void onSuccess(Void result, int statusCode, Map<String, List<String>> responseHeaders) {
-
+                        // nothing to do
                     }
 
                     @Override
                     public void onUploadProgress(long bytesWritten, long contentLength, boolean done) {
-
+                        // nothing to do
                     }
 
                     @Override
                     public void onDownloadProgress(long bytesRead, long contentLength, boolean done) {
-
+                        // nothing to do
                     }
                 });
             } catch (Exception e) {
@@ -170,6 +165,7 @@ public class ReportActivity implements Disposable {
                 public void onSuccess(Bucket result, int statusCode, Map<String, List<String>> responseHeaders) {
                     LOG.info("Bucket found");
                     bucket = result;
+                    initialCheckDone = true;
                 }
 
                 @Override
@@ -191,6 +187,7 @@ public class ReportActivity implements Disposable {
                                                 public void onSuccess(Bucket result, int statusCode, Map<String, List<String>> responseHeaders) {
                                                     LOG.info("Bucket found");
                                                     bucket = result;
+                                                    initialCheckDone = true;
                                                 }
 
                                                 @Override
@@ -202,10 +199,12 @@ public class ReportActivity implements Disposable {
 
                                                 @Override
                                                 public void onUploadProgress(long bytesWritten, long contentLength, boolean done) {
+                                                    // nothing to do
                                                 }
 
                                                 @Override
                                                 public void onDownloadProgress(long bytesRead, long contentLength, boolean done) {
+                                                    // nothing to do
                                                 }
                                             });
                                         } catch (ApiException ex) {
@@ -216,32 +215,36 @@ public class ReportActivity implements Disposable {
                                     @Override
                                     public void onFailure(ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
                                         LOG.error("Unable to create bucket", e);
+                                        initialCheckDone = true;
                                     }
 
                                     @Override
                                     public void onUploadProgress(long bytesWritten, long contentLength, boolean done) {
-
+                                        // nothing to do
                                     }
 
                                     @Override
                                     public void onDownloadProgress(long bytesRead, long contentLength, boolean done) {
-
+                                        // nothing to do
                                     }
                                 }
 
                         );
                     } catch (Exception expB) {
                         LOG.error("Unable to create bucket", expB);
+                        initialCheckDone = true;
                     }
                 }
 
 
                 @Override
                 public void onUploadProgress(long bytesWritten, long contentLength, boolean done) {
+                    // nothing to do
                 }
 
                 @Override
                 public void onDownloadProgress(long bytesRead, long contentLength, boolean done) {
+                    // nothing to do
                 }
             });
         } catch (Exception exp) {
@@ -259,11 +262,11 @@ public class ReportActivity implements Disposable {
                 initBucket();
             }
 
-            if (bucket == null && !connexionFailedMessageAlreadySend) {
+            if (initialCheckDone && bucket == null && !connexionFailedMessageAlreadySend) {
                 connexionLost();
             }
 
-            if (bucket != null && connexionLost) {
+            if (initialCheckDone && bucket != null && connexionLost) {
                 connexionResume();
             }
         };

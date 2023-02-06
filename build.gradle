@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'fr.mary.olivier'
-version '2.0.4'
+version '2.0.5'
 
 repositories {
     mavenCentral()
@@ -83,6 +83,8 @@ intellij {
 }
 patchPluginXml {
     setChangeNotes """
+      2.0.5<br>
+       - Fix initial warning<br>
       2.0.4<br>
        - Fix aw-server-rust schema differences<br>
        - Fix very slow aw-server issues (windows)<br>
