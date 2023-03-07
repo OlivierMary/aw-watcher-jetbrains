@@ -70,7 +70,7 @@ dependencies {
     implementation 'javax.ws.rs:javax.ws.rs-api:2.1.1'
     implementation 'org.openapitools:openapi-generator:6.3.0'
     implementation 'org.projectlombok:lombok:1.18.26'
-    annotationProcessor 'org.projectlombok:lombok:1.18.24'
+    annotationProcessor 'org.projectlombok:lombok:1.18.26'
     testImplementation 'junit:junit:4.13.1'
     swaggerCodegen 'org.openapitools:openapi-generator-cli:6.3.0'
 }
