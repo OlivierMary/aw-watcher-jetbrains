@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'fr.mary.olivier'
-version '2.0.6'
+version '2.0.7'
 
 repositories {
     mavenCentral()
@@ -83,6 +83,8 @@ intellij {
 }
 patchPluginXml {
     setChangeNotes """
+      2.0.7<br>
+       - OkHttp3 upgrade<br>
       2.0.6<br>
        - Upgrade dependencies<br>
       2.0.5<br>
