@@ -72,7 +72,7 @@ dependencies {
     implementation 'org.projectlombok:lombok:1.18.26'
     annotationProcessor 'org.projectlombok:lombok:1.18.26'
     testImplementation 'junit:junit:4.13.1'
-    swaggerCodegen 'org.openapitools:openapi-generator-cli:6.3.0'
+    swaggerCodegen 'org.openapitools:openapi-generator-cli:6.4.0'
 }
 
 intellij {
