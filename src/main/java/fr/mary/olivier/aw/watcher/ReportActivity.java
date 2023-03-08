@@ -121,7 +121,7 @@ public class ReportActivity implements Disposable {
                 API_CLIENT.postHeartbeatResourceAsync(bucket.getId(), event, "" + HEARTBEAT_PULSETIME, new ApiCallback<>() {
                     @Override
                     public void onFailure(ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
-                        LOG.error("Unable to send heartbeat", e);
+                        LOG.warn("Unable to send heartbeat:", e);
                         ReportActivity.connexionLost();
                     }
 
@@ -141,7 +141,7 @@ public class ReportActivity implements Disposable {
                     }
                 });
             } catch (Exception e) {
-                LOG.error("Unable to send heartbeat", e);
+                LOG.warn("Unable to send heartbeat:", e);
                 ReportActivity.connexionLost();
             }
         }
@@ -153,7 +153,7 @@ public class ReportActivity implements Disposable {
         try {
             hostname = InetAddress.getLocalHost().getHostName();
         } catch (Exception exp) {
-            LOG.error("Unable to get hostname", exp);
+            LOG.warn("Unable to get hostname:", exp);
             hostname = "unknown";
         }
 
@@ -192,7 +192,7 @@ public class ReportActivity implements Disposable {
 
                                                 @Override
                                                 public void onFailure(ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
-                                                    LOG.error("Unable to init bucket", e);
+                                                    LOG.warn("Unable to init bucket:", e);
                                                     connexionLost = true;
                                                 }
 
@@ -208,13 +208,13 @@ public class ReportActivity implements Disposable {
                                                 }
                                             });
                                         } catch (ApiException ex) {
-                                            LOG.error("Unable to init bucket", ex);
+                                            LOG.warn("Unable to init bucket:", ex);
                                         }
                                     }
 
                                     @Override
                                     public void onFailure(ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
-                                        LOG.error("Unable to create bucket", e);
+                                        LOG.warn("Unable to create bucket:", e);
                                         initialCheckDone = true;
                                     }
 
@@ -231,7 +231,7 @@ public class ReportActivity implements Disposable {
 
                         );
                     } catch (Exception expB) {
-                        LOG.error("Unable to create bucket", expB);
+                        LOG.warn("Unable to create bucket:", expB);
                         initialCheckDone = true;
                     }
                 }
@@ -248,7 +248,7 @@ public class ReportActivity implements Disposable {
                 }
             });
         } catch (Exception exp) {
-            LOG.error("Unable to init bucket", exp);
+            LOG.warn("Unable to init bucket:", exp);
             connexionLost = true;
         }
     }
@@ -282,12 +282,12 @@ public class ReportActivity implements Disposable {
         try {
             connection.disconnect();
         } catch (Exception e) {
-            LOG.error("Unable to disconnect to message bus", e);
+            LOG.warn("Unable to disconnect to message bus:", e);
         }
         try {
             scheduledConnexion.cancel(true);
         } catch (Exception e) {
-            LOG.error("Unable to cancel schedulers", e);
+            LOG.warn("Unable to cancel schedulers:", e);
         }
     }
 
