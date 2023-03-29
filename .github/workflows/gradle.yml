@@ -12,7 +12,7 @@ on:
     branches:
       - "*"
     tags:
-      - 'v*'
+      - '*'
   pull_request:
     branches:
       - "*"
