@@ -11,6 +11,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
+import com.intellij.openapi.fileTypes.LanguageFileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBus;
@@ -103,9 +104,14 @@ public class ReportActivity implements Disposable {
                 return;
             }
 
+            String language = file.getFileType().getDisplayName();
+            if (file.getFileType() instanceof LanguageFileType) {
+                language = ((LanguageFileType) file.getFileType()).getLanguage().getDisplayName();
+            }
+
             HeartBeatData.HeartBeatDataBuilder dataBuilder = HeartBeatData.builder().projectPath(project.getPresentableUrl()).editorVersion(IDE_VERSION).editor(IDE_NAME)
                     //.eventType(classz.getName()) disabled for heartbeat because data change and create multiples of event
-                    .file(file.getPresentableName()).fileFullPath(file.getPath()).project(project.getName()).language(file.getFileType().getName());
+                    .file(file.getPresentableName()).fileFullPath(file.getPath()).project(project.getName()).language(language);
             GitRepositoryManager repositoryManager = GitUtil.getRepositoryManager(project);
             repositoryManager.getRepositories().stream().findFirst().ifPresent(r -> {
                 dataBuilder.branch(r.getCurrentBranchName());

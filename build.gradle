@@ -1,11 +1,11 @@
 plugins {
     id 'java'
-    id 'org.jetbrains.intellij' version '1.13.1'
+    id 'org.jetbrains.intellij' version '1.13.3'
     id 'org.hidetake.swagger.generator' version '2.19.2'
 }
 
 group 'fr.mary.olivier'
-version '2.0.8'
+version '2.0.9'
 
 repositories {
     mavenCentral()
@@ -61,7 +61,7 @@ targetCompatibility = JavaVersion.VERSION_11
 
 
 dependencies {
-    implementation 'io.swagger:swagger-annotations:1.6.9'
+    implementation 'io.swagger:swagger-annotations:1.6.10'
     implementation 'com.squareup.okhttp3:logging-interceptor:4.10.0'
     implementation 'com.squareup.okhttp3:okhttp:4.10.0'
     implementation 'com.google.code.gson:gson:2.10.1'
@@ -79,10 +79,14 @@ intellij {
     version.set('2020.3')
     setUpdateSinceUntilBuild(false)
     plugins.add('Git4Idea')
+//    type="CL"
+    type="GO"
 
 }
 patchPluginXml {
     setChangeNotes """
+      2.0.9<br>
+       - Fix Some Language issues<br>
       2.0.8<br>
        - Fix logs errors instead of warn<br>
       2.0.7<br>
