@@ -308,7 +308,7 @@ public class ReportActivity implements Disposable {
     protected static synchronized void connexionLost() {
         if (!connexionFailedMessageAlreadySend) {
             connexionFailedMessageAlreadySend = true;
-            Notifications.Bus.notify(new Notification(ReportActivity.ACTIVITY_WATCHER, ReportActivity.ACTIVITY_WATCHER, "Activity Watcher Server connexion lost?\nWill try to re-send events when connexion back.", NotificationType.WARNING));
+            Notifications.Bus.notify(new Notification(ReportActivity.ACTIVITY_WATCHER, ReportActivity.ACTIVITY_WATCHER, "Activity Watcher Server connection lost?\nWill try to re-send events when connection back.", NotificationType.WARNING));
         }
         connexionLost = true;
         bucket = null;
