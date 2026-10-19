@@ -34,6 +34,7 @@ import java.net.InetAddress;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -113,7 +114,8 @@ public class ReportActivity implements Disposable {
                     //.eventType(classz.getName()) disabled for heartbeat because data change and create multiples of event
                     .file(file.getPresentableName()).fileFullPath(file.getPath()).project(project.getName()).language(language);
             GitRepositoryManager repositoryManager = GitUtil.getRepositoryManager(project);
-            repositoryManager.getRepositories().stream().findFirst().ifPresent(r -> {
+            // Report the repository containing the file (not the first one of a multi-repository project), if any
+            Optional.ofNullable(repositoryManager.getRepositoryForFileQuick(file)).ifPresent(r -> {
                 dataBuilder.branch(r.getCurrentBranchName());
                 dataBuilder.commit(r.getCurrentRevision());
                 dataBuilder.state(r.getState().name());
