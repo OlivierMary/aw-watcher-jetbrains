@@ -7,7 +7,7 @@ plugins {
 }
 
 group = 'fr.mary.olivier'
-version = '2.0.9'
+version = '2.1.0'
 
 repositories {
     mavenCentral()
@@ -106,6 +106,12 @@ intellijPlatform {
             untilBuild = provider { null }
         }
         changeNotes = """
+      2.1.0<br>
+       - Report the git repository containing the edited file (multi-repository projects)<br>
+       - Dynamic plugin: install, update or disable without restarting the IDE<br>
+       - Minimum IDE version is now 2022.3<br>
+       - Plugin size reduced from 26 MB to 2 MB (unused libraries removed)<br>
+       - Replace deprecated IntelliJ Platform APIs<br>
       2.0.9<br>
        - Fix Some Language issues<br>
       2.0.8<br>
