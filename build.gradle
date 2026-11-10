@@ -133,5 +133,5 @@ patchPluginXml {
 }
 
 publishPlugin {
-    setToken intellijPublishToken
+    setToken findProperty('intellijPublishToken')
 }

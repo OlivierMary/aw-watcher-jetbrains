@@ -26,28 +26,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v7
+    - name: Validate Gradle wrapper
+      uses: gradle/actions/wrapper-validation@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
     - name: Set up JDK 11
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v6
       with:
         java-version: '11'
         distribution: 'temurin'
         cache: 'gradle'
     - name: Build with Gradle
-      uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
-      with:
-        arguments: buildPlugin
-      env:
-        ORG_GRADLE_PROJECT_intellijPublishToken: ${{ secrets.PUBLISH_TOKEN }}
+      run: ./gradlew buildPlugin
     - name: Publish with Gradle
       if: startsWith(github.ref, 'refs/tags/')
-      uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
-      with:
-        arguments: publishPlugin
+      run: ./gradlew publishPlugin
       env:
         ORG_GRADLE_PROJECT_intellijPublishToken: ${{ secrets.PUBLISH_TOKEN }}
     - name: Archive production artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v7
       with:
         name: distribution
         path: |
