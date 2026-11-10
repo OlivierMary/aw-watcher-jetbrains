@@ -1,90 +1,117 @@
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+
 plugins {
     id 'java'
-    id 'org.jetbrains.intellij' version '1.13.3'
-    id 'org.hidetake.swagger.generator' version '2.19.2'
+    id 'org.jetbrains.intellij.platform' version '2.20.1'
+    id 'org.openapi.generator' version '7.27.0'
 }
 
-group 'fr.mary.olivier'
-version '2.0.9'
+group = 'fr.mary.olivier'
+version = '2.1.0'
 
 repositories {
     mavenCentral()
-}
-
-sourceSets {
-    generated {
-        java.srcDirs "${projectDir}/src/generated/java", "${projectDir}/swagger/src/main/java"
-    }
-    main {
-        java.srcDirs += sourceSets.generated.java.srcDirs
+    intellijPlatform {
+        defaultRepositories()
     }
 }
 
-tasks.register('generateVersion') {
-    doFirst {
-        def versionFile = file("${projectDir}/src/generated/java/fr/mary/olivier/aw/watcher/Version.java")
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+def generatedDir = layout.buildDirectory.dir('generated')
+
+// Version.java, read by InfoAction
+def generateVersion = tasks.register('generateVersion') {
+    def outputDir = generatedDir.map { it.dir('version') }
+    def pluginVersion = project.version.toString()
+    inputs.property('version', pluginVersion)
+    outputs.dir(outputDir)
+    doLast {
+        def versionFile = outputDir.get().file('fr/mary/olivier/aw/watcher/Version.java').asFile
         versionFile.parentFile.mkdirs()
-        versionFile.text = """
-package fr.mary.olivier.aw.watcher;
+        versionFile.text = """package fr.mary.olivier.aw.watcher;
 
 public class Version {
-	public static String getVersion() {
-		return "$project.version";
-	}
+    public static String getVersion() {
+        return "${pluginVersion}";
+    }
 }
 """
     }
 }
 
-swaggerSources {
-    activityWatcher {
-        inputFile = file('src/main/resources/swagger.yaml')
+// ActivityWatch REST client
+openApiGenerate {
+    generatorName = 'java'
+    library = 'okhttp-gson'
+    inputSpec = layout.projectDirectory.file('src/main/resources/swagger.yaml').asFile.path
+    outputDir = generatedDir.get().dir('openapi').asFile.path
+    apiPackage = 'org.openapitools.client.api'
+    modelPackage = 'org.openapitools.client.model'
+    invokerPackage = 'org.openapitools.client'
+    generateApiTests = false
+    generateModelTests = false
+    generateApiDocumentation = false
+    generateModelDocumentation = false
+    configOptions = [
+            hideGenerationTimestamp: 'true',
+            openApiNullable        : 'false',
+    ]
+}
 
-        code {
-            language = 'java'
-            outputDir = file('swagger')
-            wipeOutputDir = true
-            rawOptions = ["--ignore-file-override=${projectDir}/.openapi-generator-ignore"]
+sourceSets {
+    main {
+        java.srcDir(generateVersion)
+        java.srcDir(tasks.named('openApiGenerate').map { generatedDir.get().dir('openapi/src/main/java') })
+    }
+}
 
+dependencies {
+    intellijPlatform {
+        create(IntelliJPlatformType.IntellijIdeaCommunity, '2022.3.3')
+        bundledPlugin 'Git4Idea'
+    }
+
+    // runtime dependencies of the generated REST client
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
+    implementation 'com.google.code.gson:gson:2.15.0'
+    implementation 'io.gsonfire:gson-fire:1.9.0'
+
+    // compile time only
+    compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
+    compileOnly 'javax.annotation:javax.annotation-api:1.3.2'
+    compileOnly 'org.projectlombok:lombok:1.18.48'
+    annotationProcessor 'org.projectlombok:lombok:1.18.48'
+}
+
+// runIde cannot start an IDE older than 2023.3: manual tests run on a recent IDE
+intellijPlatformTesting {
+    runIde {
+        register('runIdeLatest') {
+            type = IntelliJPlatformType.IntellijIdea
+            version = '2026.3'
         }
     }
 }
 
-compileJava.dependsOn generateVersion, swaggerSources.activityWatcher.code
-
-clean {
-    delete += sourceSets.generated.java.srcDirs + sourceSets.generated.resources.srcDirs + swaggerSources.activityWatcher.code.outputDir
-}
-
-sourceCompatibility = JavaVersion.VERSION_11
-targetCompatibility = JavaVersion.VERSION_11
-
-
-dependencies {
-    implementation 'io.swagger:swagger-annotations:1.6.10'
-    implementation 'com.squareup.okhttp3:logging-interceptor:4.10.0'
-    implementation 'com.squareup.okhttp3:okhttp:4.10.0'
-    implementation 'com.google.code.gson:gson:2.10.1'
-    implementation 'io.gsonfire:gson-fire:1.8.3'
-    implementation 'javax.annotation:javax.annotation-api:1.3.2'
-    implementation 'javax.ws.rs:javax.ws.rs-api:2.1.1'
-    implementation 'org.openapitools:openapi-generator:6.4.0'
-    implementation 'org.projectlombok:lombok:1.18.26'
-    annotationProcessor 'org.projectlombok:lombok:1.18.26'
-    testImplementation 'junit:junit:4.13.1'
-    swaggerCodegen 'org.openapitools:openapi-generator-cli:6.4.0'
-}
-
-intellij {
-    version.set('2020.3')
-    setUpdateSinceUntilBuild(false)
-    plugins.add('Git4Idea')
-//    type="CL"
-    type="GO"
-
-}
-patchPluginXml {
-    setChangeNotes """
+intellijPlatform {
+    pluginConfiguration {
+        ideaVersion {
+            sinceBuild = '223'
+            untilBuild = provider { null }
+        }
+        changeNotes = """
+      2.1.0<br>
+       - Report the git repository containing the edited file (multi-repository projects)<br>
+       - Dynamic plugin: install, update or disable without restarting the IDE<br>
+       - Minimum IDE version is now 2022.3<br>
+       - Plugin size reduced from 26 MB to 2 MB (unused libraries removed)<br>
+       - Replace deprecated IntelliJ Platform APIs<br>
       2.0.9<br>
        - Fix Some Language issues<br>
       2.0.8<br>
@@ -130,8 +157,16 @@ patchPluginXml {
        - Fix build.<br>
       1.0.0<br>
        - Initial version"""
-}
+    }
 
-publishPlugin {
-    setToken findProperty('intellijPublishToken')
+    pluginVerification {
+        ides {
+            create(IntelliJPlatformType.IntellijIdeaCommunity, '2022.3.3')
+            create(IntelliJPlatformType.IntellijIdea, '2026.3')
+        }
+    }
+
+    publishing {
+        token = providers.gradleProperty('intellijPublishToken')
+    }
 }

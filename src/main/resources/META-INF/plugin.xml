@@ -2,25 +2,27 @@
     <id>fr.mary.olivier.aw-watcher</id>
     <name>Activity Watcher</name>
     <vendor email="olivier@omary.fr" url="https://github.com/OlivierMary">OlivierMARY</vendor>
-    <version>2.0.9</version>
 
     <description><![CDATA[
     This extension allows the open source tracking tool ActivityWatch to keep track of the projects and coding languages you use in jetbrains IDEs.
     ]]></description>
 
-    <idea-version since-build="203"/>
-
     <depends>com.intellij.modules.lang</depends>
     <depends>com.intellij.modules.platform</depends>
     <depends>Git4Idea</depends>
+
     <extensions defaultExtensionNs="com.intellij">
+        <notificationGroup id="Activity Watcher" displayType="BALLOON"/>
+        <!-- starts the service (connection to ActivityWatch) as soon as an editor is opened -->
+        <editorFactoryListener implementation="fr.mary.olivier.aw.watcher.listener.RAEditorFactoryListener"/>
+        <editorFactoryDocumentListener implementation="fr.mary.olivier.aw.watcher.listener.RADocumentListener"/>
+        <editorFactoryMouseListener implementation="fr.mary.olivier.aw.watcher.listener.RAEditorMouseListener"/>
     </extensions>
 
-    <application-components>
-        <component>
-            <implementation-class>fr.mary.olivier.aw.watcher.ReportActivity</implementation-class>
-        </component>
-    </application-components>
+    <applicationListeners>
+        <listener class="fr.mary.olivier.aw.watcher.listener.RASaveListener"
+                  topic="com.intellij.openapi.fileEditor.FileDocumentManagerListener"/>
+    </applicationListeners>
 
     <actions>
         <action id="fr.mary.olivier.aw-watcher.aw-watcher.Info"

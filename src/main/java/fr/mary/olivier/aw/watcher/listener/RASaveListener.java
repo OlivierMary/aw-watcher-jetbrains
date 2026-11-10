@@ -14,34 +14,4 @@ public class RASaveListener implements FileDocumentManagerListener {
         VirtualFile file = FileDocumentManager.getInstance().getFile(document);
         ReportActivity.sendHeartBeat(file, document);
     }
-
-    @Override
-    public void beforeAllDocumentsSaving() {
-        // no action
-    }
-
-    @Override
-    public void beforeFileContentReload(@NotNull VirtualFile file, @NotNull Document document) {
-        // no action
-    }
-
-    @Override
-    public void fileWithNoDocumentChanged(@NotNull VirtualFile file) {
-        // no action
-    }
-
-    @Override
-    public void fileContentReloaded(@NotNull VirtualFile file, @NotNull Document document) {
-        // no action
-    }
-
-    @Override
-    public void fileContentLoaded(@NotNull VirtualFile file, @NotNull Document document) {
-        // no action
-    }
-
-    @Override
-    public void unsavedDocumentsDropped() {
-        // no action
-    }
 }

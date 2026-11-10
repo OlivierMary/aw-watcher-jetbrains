@@ -1,8 +1,8 @@
-/src/generated/
 .gradle/
 .idea/
 build/
-swagger/
 gradle.properties
 *.iml
 
+.intellijPlatform/
+.kotlin/
