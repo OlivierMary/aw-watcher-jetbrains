@@ -7,7 +7,7 @@ plugins {
 }
 
 group = 'fr.mary.olivier'
-version = '2.1.0'
+version = '2.1.1'
 
 repositories {
     mavenCentral()
@@ -63,6 +63,20 @@ openApiGenerate {
     ]
 }
 
+// The generated client still calls JsonReader.setLenient(true), deprecated since Gson 2.11:
+// switch it to the equivalent setStrictness(LENIENT) (reported by the Plugin Verifier)
+tasks.named('openApiGenerate') {
+    doLast {
+        def json = generatedDir.get().file('openapi/src/main/java/org/openapitools/client/JSON.java').asFile
+        def source = json.text
+        def fixed = source.replace('jsonReader.setLenient(true);', 'jsonReader.setStrictness(com.google.gson.Strictness.LENIENT);')
+        if (fixed == source) {
+            throw new GradleException("JsonReader.setLenient(true) not found in ${json}: check the generated client")
+        }
+        json.text = fixed
+    }
+}
+
 sourceSets {
     main {
         java.srcDir(generateVersion)
@@ -106,6 +120,8 @@ intellijPlatform {
             untilBuild = provider { null }
         }
         changeNotes = """
+      2.1.1<br>
+       - Remove the last deprecated API usages reported by JetBrains Marketplace<br>
       2.1.0<br>
        - Report the git repository containing the edited file (multi-repository projects)<br>
        - Dynamic plugin: install, update or disable without restarting the IDE<br>
