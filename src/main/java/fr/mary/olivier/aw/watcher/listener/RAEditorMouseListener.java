@@ -17,24 +17,4 @@ public class RAEditorMouseListener implements EditorMouseListener {
         Project project = editor.getProject();
         ReportActivity.sendHeartBeat(file, project);
     }
-
-    @Override
-    public void mouseClicked(@NotNull EditorMouseEvent editorMouseEvent) {
-        // no action
-    }
-
-    @Override
-    public void mouseReleased(@NotNull EditorMouseEvent editorMouseEvent) {
-        // no action
-    }
-
-    @Override
-    public void mouseEntered(@NotNull EditorMouseEvent editorMouseEvent) {
-        // no action
-    }
-
-    @Override
-    public void mouseExited(@NotNull EditorMouseEvent editorMouseEvent) {
-        // no action
-    }
 }
