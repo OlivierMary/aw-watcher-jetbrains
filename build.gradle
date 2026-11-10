@@ -89,6 +89,16 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok:1.18.48'
 }
 
+// runIde cannot start an IDE older than 2023.3: manual tests run on a recent IDE
+intellijPlatformTesting {
+    runIde {
+        register('runIdeLatest') {
+            type = IntelliJPlatformType.IntellijIdea
+            version = '2026.3'
+        }
+    }
+}
+
 intellijPlatform {
     pluginConfiguration {
         ideaVersion {
