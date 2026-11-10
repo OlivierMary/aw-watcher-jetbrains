@@ -6,3 +6,5 @@ swagger/
 gradle.properties
 *.iml
 
+.intellijPlatform/
+.kotlin/
